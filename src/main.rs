@@ -1,11 +1,10 @@
 mod entities;
 mod enums;
 
-use std::env::{var, VarError};
+use std::env::{var};
 use futures::executor::block_on;
 use sea_orm::*;
 use entities::{prelude::*, *};
-use crate::enums::{Amount, Case};
 
 async fn run() -> Result<(), DbErr> {
     let db;
@@ -19,34 +18,38 @@ async fn run() -> Result<(), DbErr> {
             panic!("Env var DATABASE_URL not found");
         }
     };
-    
-    let new_conjugation = noun_conjugation_table::ActiveModel {
-        conjugation_group: ActiveValue::Set("λόγος".to_owned()),
-        morphological_amount: ActiveValue::Set(Amount::Singular as i32),
-        morphological_case: ActiveValue::Set(Case::Nominative as i32),
-        suffix: ActiveValue::Set(Option::from("ος".to_owned())),
-        ..Default::default()
-    };
-    
-    new_conjugation.save(&db).await?;
 
-    let new_root = noun_roots_table::ActiveModel {
-        root: ActiveValue::Set("ἀβυσσ".to_owned()),
-        conjugation_group: ActiveValue::Set("λόγος".to_owned()),
-        ..Default::default()
-    };
+    let unique_conjugations = NounConjugationTable::find()
+        .select_only()
+        .columns([
+            noun_conjugation_table::Column::Prefix, 
+            noun_conjugation_table::Column::Suffix, 
+            noun_conjugation_table::Column::MorphologicalAmount, 
+            noun_conjugation_table::Column::MorphologicalCase
+        ])
+        .distinct()
+        .into_json()
+        .all(&db).await?;
 
-    new_root.save(&db).await?;
+    let word = "στόλους";
 
-    let matching_morphology = NounConjugationTable::find()
-        .filter(
-            Condition::any()
-                .add(noun_conjugation_table::Column::Suffix.eq("ος"))
-        ).all(&db).await?;
-
-    for morphology in matching_morphology {
-        println!("Match case {}", morphology.morphological_case);
-        println!("Match amount {}", morphology.morphological_amount);
+    for conjugation in unique_conjugations {
+        let prefix = conjugation["prefix"].as_str().unwrap_or("");
+        let suffix = conjugation["suffix"].as_str().unwrap_or("");
+        
+        if word.starts_with(prefix) && word.ends_with(suffix) {
+            
+            let amount = conjugation["morphological_amount"].as_i64().unwrap();
+            let case = conjugation["morphological_case"].as_i64().unwrap();
+            
+            println!("Prefix: {}\nSuffix: {}\nRoot: {}\nAmount: {:?}\nCase: {:?}", 
+                     prefix, 
+                     suffix, 
+                     word.trim_start_matches(prefix).trim_end_matches(suffix), 
+                     amount, 
+                     case
+            );
+        }
     }
 
     Ok(())
