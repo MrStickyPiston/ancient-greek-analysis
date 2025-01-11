@@ -28,6 +28,16 @@ pub(crate) enum Gender {
     Unknown
 }
 
+#[derive(Debug)]
+pub(crate) struct NounMorphology {
+    pub(crate) prefix: String,
+    pub(crate) suffix: String,
+    pub(crate) root: String,
+    pub(crate) amount: Amount,
+    pub(crate) case: Case,
+    pub(crate) gender: Gender
+}
+
 pub(crate) fn amount_from_int(n: i64) -> Amount {
     match n {
         0 => Amount::Singular,
