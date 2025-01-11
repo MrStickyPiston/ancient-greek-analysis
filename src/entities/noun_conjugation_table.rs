@@ -12,6 +12,7 @@ pub struct Model {
     pub suffix: Option<String>,
     pub morphological_amount: i32,
     pub morphological_case: i32,
+    pub morphological_gender: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

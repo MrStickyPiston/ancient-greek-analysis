@@ -5,6 +5,7 @@ use std::env::{var};
 use futures::executor::block_on;
 use sea_orm::*;
 use entities::{prelude::*, *};
+use crate::enums::{amount_from_int, case_from_int, gender_from_int};
 
 async fn run() -> Result<(), DbErr> {
     let db;
@@ -24,8 +25,10 @@ async fn run() -> Result<(), DbErr> {
         .columns([
             noun_conjugation_table::Column::Prefix, 
             noun_conjugation_table::Column::Suffix, 
+            
             noun_conjugation_table::Column::MorphologicalAmount, 
-            noun_conjugation_table::Column::MorphologicalCase
+            noun_conjugation_table::Column::MorphologicalCase,
+            noun_conjugation_table::Column::MorphologicalGender
         ])
         .distinct()
         .into_json()
@@ -39,15 +42,17 @@ async fn run() -> Result<(), DbErr> {
         
         if word.starts_with(prefix) && word.ends_with(suffix) {
             
-            let amount = conjugation["morphological_amount"].as_i64().unwrap();
-            let case = conjugation["morphological_case"].as_i64().unwrap();
+            let amount = amount_from_int(conjugation["morphological_amount"].as_i64().unwrap());
+            let case = case_from_int(conjugation["morphological_case"].as_i64().unwrap());
+            let gender = gender_from_int(conjugation["morphological_gender"].as_i64().unwrap());
             
-            println!("Prefix: {}\nSuffix: {}\nRoot: {}\nAmount: {:?}\nCase: {:?}", 
+            println!("Prefix: {}\nSuffix: {}\nRoot: {}\nAmount: {:?}\nCase: {:?}\nGender: {:?}", 
                      prefix, 
                      suffix, 
                      word.trim_start_matches(prefix).trim_end_matches(suffix), 
                      amount, 
-                     case
+                     case,
+                     gender
             );
         }
     }
