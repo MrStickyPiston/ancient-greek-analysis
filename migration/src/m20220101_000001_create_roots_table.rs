@@ -1,3 +1,4 @@
+use std::string;
 use sea_orm_migration::{prelude::*, schema::*};
 
 #[derive(DeriveMigrationName)]
@@ -33,8 +34,8 @@ impl MigrationTrait for Migration {
                 // Shared amongst all entries for this group
                 .col(string(NounConjugationTable::ConjugationGroup))
                 
-                .col(ColumnDef::new(NounConjugationTable::Prefix).string())
-                .col(ColumnDef::new(NounConjugationTable::Suffix).string())
+                .col(string(NounConjugationTable::Prefix))
+                .col(string(NounConjugationTable::Suffix))
                 
                 .col(ColumnDef::new(NounConjugationTable::MorphologicalAmount).integer().not_null())
                 .col(ColumnDef::new(NounConjugationTable::MorphologicalCase).integer().not_null())

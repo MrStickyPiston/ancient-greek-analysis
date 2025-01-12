@@ -34,7 +34,7 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
         let gender = gender_from_int(conjugation["morphological_gender"].as_i64().unwrap());
 
         let conjugation_col = NounConjugationTable::find().filter(
-            Condition::any()
+            Condition::all()
 
                 // The same prefix/suffix
                 .add( noun_conjugation_table::Column::Prefix.eq(prefix) )
@@ -45,15 +45,16 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
                 .add( noun_conjugation_table::Column::MorphologicalCase.eq(conjugation["morphological_case"].as_i64()) )
                 .add( noun_conjugation_table::Column::MorphologicalGender.eq(conjugation["morphological_gender"].as_i64()) )
         ).one(&db).await?.unwrap();
-
-        if !NounRootsTable::find()
+        
+        let root = NounRootsTable::find()
             .filter(
-                Condition::any()
+                Condition::all()
                     .add( noun_roots_table::Column::ConjugationGroup.eq(conjugation_col.conjugation_group))
                     .add( noun_roots_table::Column::Root.eq(word.trim_start_matches(prefix).trim_end_matches(suffix)) )
-            ).one(&db).await?.is_some() {
-
-            // Stem does not match word
+            ).one(&db).await?;
+        
+        if root.is_none() {
+            // no matching roots found, applying the wrong conjugation group
             continue;
         }
         
@@ -61,7 +62,7 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
             NounMorphology {
                 prefix: prefix.to_string(),
                 suffix: suffix.to_string(),
-                root: word.trim_start_matches(prefix).trim_end_matches(suffix).to_string(),
+                root: root.unwrap().root,
                 amount,
                 case,
                 gender,
