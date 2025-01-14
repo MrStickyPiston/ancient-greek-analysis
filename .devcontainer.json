@@ -1,5 +1,5 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/rust:latest",
+  "image": "rust:latest",
   "mounts": [
     // Fix having to rebuild all dependencies every time
     {
