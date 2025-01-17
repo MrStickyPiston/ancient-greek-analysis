@@ -1,5 +1,6 @@
 INSERT INTO noun_roots_table (root, conjugation_group)
 VALUES
+    -- Nouns ending with -ος
     ('ἀνθρώπ', 'λόγος'),
     ('δαίμον', 'λόγος'),
     ('ἔθν', 'λόγος'),
@@ -11,4 +12,10 @@ VALUES
     ('ποταμ', 'λόγος'),
     ('στόλ', 'λόγος'),
     ('τρόπ', 'λόγος'),
-    ('θε', 'θεά');
+
+    -- Nouns with a first declension ending with ᾱ́
+    ('θε', 'θεά'),      -- Godess
+
+    -- Nouns with a first declension ending with ᾱ
+    ('θέ', 'θέα'),      -- View, sight
+    ('ἡμέρ', 'θέα');    -- Day
