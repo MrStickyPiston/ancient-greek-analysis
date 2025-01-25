@@ -20,7 +20,7 @@ async fn run() -> Result<(), DbErr> {
         }
     };
 
-    let word = "θεαῖν";
+    let word = "τῑμαῖς";
     get_morphology(word, db).await?.iter().for_each(|m| println!("{:#?}", m));
 
     Ok(())

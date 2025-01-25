@@ -1,4 +1,7 @@
+DELETE FROM noun_conjugation_table WHERE true;
+
 INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, morphological_amount, morphological_case, morphological_gender) VALUES
+    -- λόγος
     ('λόγος', '', 'ος', 0, 0, 0),
     ('λόγος', '', 'ου', 0, 1, 0),
     ('λόγος', '', 'ῳ', 0, 2, 0),
@@ -17,10 +20,11 @@ INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, morpholog
     ('λόγος', '', 'ους', 2, 3, 0),
     ('λόγος', '', 'οι', 2, 4, 0);
 
--- θεά/θέα
--- The grammar of both is actually nearly the same, one conjugation is exactly the same.
--- Due to accents there are some differences. TODO: check if accents matter for grammar
 INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, morphological_amount, morphological_case, morphological_gender) VALUES
+    -- θεά/θέα
+    -- Feminine with nominative singular on -ά/-α
+    -- The grammar of both is actually nearly the same, one conjugation is exactly the same.
+    -- Due to accents there are some differences. TODO: check if accents matter for grammar
     ('θεά', '', 'ᾱ́', 0, 0, 1), ('θέα', '', 'ᾱ', 0, 0, 1),
     ('θεά', '', 'ᾱ́', 1, 0, 1), ('θέα', '', 'ᾱ', 1, 0, 1),
     ('θεά', '', 'αί', 2, 0, 1), ('θέα', '', 'αι', 2, 0, 1),
@@ -40,3 +44,22 @@ INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, morpholog
     ('θεά', '', 'ᾱ́', 0, 4, 1), ('θέα', '', 'ᾱ', 0, 4, 1),
     ('θεά', '', 'ᾱ́', 1, 4, 1), ('θέα', '', 'ᾱ', 1, 4, 1),
     ('θεά', '', 'αί', 2, 4, 1), ('θέα', '', 'αι', 2, 4, 1);
+
+INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, morphological_amount, morphological_case, morphological_gender) VALUES
+    -- τῑμή
+    -- Feminine with nominative singular on -ή
+    ('τῑμή', '', 'ή', 0, 0, 1),
+    ('τῑμή', '', 'ᾱ́', 1, 0, 1),
+    ('τῑμή', '', 'αί', 2, 0, 1),
+    ('τῑμή', '', 'ῆς', 0, 1, 1),
+    ('τῑμή', '', 'ῇῐν', 1, 1, 1),
+    ('τῑμή', '', 'ῶν', 2, 1, 1),
+    ('τῑμή', '', 'ῇ', 0, 2, 1),
+    ('τῑμή', '', 'ῇῐν', 1, 2, 1),
+    ('τῑμή', '', 'αῖς', 2, 2, 1),
+    ('τῑμή', '', 'ήν', 0, 3, 1),
+    ('τῑμή', '', 'ᾱ́', 1, 3, 1),
+    ('τῑμή', '', 'ᾱ́ς', 2, 3, 1),
+    ('τῑμή', '', 'ή', 0, 4, 1),
+    ('τῑμή', '', 'ᾱ́', 1, 4, 1),
+    ('τῑμή', '', 'αί', 2, 4, 1);

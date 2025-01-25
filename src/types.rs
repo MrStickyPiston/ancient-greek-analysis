@@ -38,7 +38,7 @@ pub(crate) struct NounMorphology {
     pub(crate) gender: Gender
 }
 
-pub(crate) fn amount_from_int(n: i64) -> Amount {
+pub(crate) fn amount_from_int(n: i32) -> Amount {
     match n {
         0 => Amount::Singular,
         1 => Amount::Dual,
@@ -47,7 +47,7 @@ pub(crate) fn amount_from_int(n: i64) -> Amount {
     }
 }
 
-pub(crate) fn case_from_int(n: i64) -> Case {
+pub(crate) fn case_from_int(n: i32) -> Case {
     match n {
         0 => Case::Nominative,
         1 => Case::Genitive,
@@ -58,7 +58,7 @@ pub(crate) fn case_from_int(n: i64) -> Case {
     }
 }
 
-pub(crate) fn gender_from_int(n: i64) -> Gender {
+pub(crate) fn gender_from_int(n: i32) -> Gender {
     match n {
         0 => Gender::Masculine,
         1 => Gender::Feminine,
