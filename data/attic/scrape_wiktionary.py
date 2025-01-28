@@ -1,3 +1,4 @@
+import unicodedata
 from pprint import pprint
 
 import requests
@@ -63,6 +64,19 @@ def get_table(url, dialect="Attic"):
 
     return latest_table
 
+ALLOWED_ACCENTS = [
+    # Spiriti
+    b'\xcc\x93'.decode(),
+    b'\xcc\x94'.decode(),
+
+    # Iota subscript
+    b'\xcd\x85'.decode()
+]
+
+def without_accents(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s) if not unicodedata.combining(c) or c in ALLOWED_ACCENTS)
+
+
 # HTML source with a table
 html_source = open('table').read()
 # gender_id = input("Enter the gender ID: ")
@@ -94,13 +108,21 @@ for row in table.find_all('tr'):
             try:
                 prefix, suffix = word.split(root)
             except ValueError:
-                print(f"WARNING: non-default root for conjugation: {word}. Skipping conjugation.")
-                continue
 
-            conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, {int_from_gender(gender)})")
+                try:
+                    prefix, suffix = without_accents(word).split(without_accents(root))
+
+                    prefix = word[:len(prefix)]
+                    suffix = word[len(word) - len(suffix):]
+
+                    print(f"WARNING: root with different accent for conjugation '{word}'. Using prefix '{prefix}' and suffix '{suffix}', but a manual check is recommended.")
+                except ValueError:
+                    print(f"WARNING: non-default root for conjugation: {word}. Skipping conjugation.")
+
+            conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, {int_from_gender(gender)})")
 
 print("Run the following SQL code to add this to the database:\n")
-print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, morphological_amount, morphological_case, morphological_gender) VALUES")
+print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_without_accents, suffix_without_accents, morphological_amount, morphological_case, morphological_gender) VALUES")
 for c in range(len(conjugations)):
     print("\t", end="")
     print(conjugations[c], end="")

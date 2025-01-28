@@ -31,13 +31,6 @@ impl MigrationTrait for Migration {
 #[derive(DeriveIden)]
 enum NounConjugationTable {
     Table,
-    Id,
-
-    ConjugationGroup,
-    Prefix,
-    Suffix,
-
-    MorphologicalAmount,
-    MorphologicalCase,
+    
     MorphologicalGender
 }
