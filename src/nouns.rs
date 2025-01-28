@@ -10,8 +10,9 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
     let mut possible_morphology = vec![];
     
     for conjugation in unique_conjugations {
-        let prefix = conjugation.prefix.unwrap();
-        let suffix = conjugation.suffix.unwrap();
+        
+        let prefix = conjugation.prefix;
+        let suffix = conjugation.suffix;
         
         if !( word.starts_with(&prefix) && word.ends_with(&suffix) ) {
             // Word does not match the suffix/prefix
