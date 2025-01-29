@@ -77,15 +77,14 @@ def without_accents(s):
     return ''.join(c for c in unicodedata.normalize('NFD', s) if not unicodedata.combining(c) or c in ALLOWED_ACCENTS)
 
 
-# HTML source with a table
 html_source = open('table').read()
-# gender_id = input("Enter the gender ID: ")
-# root = input("Enter the root: ")
 
 table = get_table(input("Enter a wiktionary.org url: "))
 nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
 root = input(f"Found a table with nominative singular {nominative_singular}. Enter the root: ")
 gender = input("Enter the gender: ")
+
+exact = 'true'
 
 amount_col = []
 conjugations = []
@@ -116,13 +115,17 @@ for row in table.find_all('tr'):
                     suffix = word[len(word) - len(suffix):]
 
                     print(f"WARNING: root with different accent for conjugation '{word}'. Using prefix '{prefix}' and suffix '{suffix}', but a manual check is recommended.")
+
+                    # different accents, not exact
+                    exact = 'false'
                 except ValueError:
                     print(f"WARNING: non-default root for conjugation: {word}. Skipping conjugation.")
+                    continue
 
-            conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, {int_from_gender(gender)})")
+            conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))})")
 
 print("Run the following SQL code to add this to the database:\n")
-print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_without_accents, suffix_without_accents, morphological_amount, morphological_case, morphological_gender) VALUES")
+print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_without_accents, suffix_without_accents, morphological_amount, morphological_case) VALUES")
 for c in range(len(conjugations)):
     print("\t", end="")
     print(conjugations[c], end="")
@@ -131,3 +134,7 @@ for c in range(len(conjugations)):
         print(",")
     else:
         print(";")
+
+print()
+print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, exact) VALUES")
+print(f"\t('{root}', '{without_accents(root)}', '{nominative_singular}', {int_from_gender(gender)}, {exact})", end=",")

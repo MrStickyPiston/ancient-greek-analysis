@@ -1,29 +1,30 @@
 DELETE FROM noun_roots_table WHERE true;
 
-INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, exact)
-VALUES
+INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, exact) VALUES
     -- Nominative singular ending with -ος
-    ('λόγ', 'λογ', 'λόγος', true),
+    ('λόγ', 'λογ', 'λόγος', 0, true),
 
     -- TODO: check if really exact match
-    ('ἀνθρώπ', 'ἀνθρωπ', 'λόγος', true),
-    ('δαίμον', 'δαιμον', 'λόγος', true),
-    ('ἔθν', 'ἐθν', 'λόγος', true),
-    ('κῆπ', 'κηπ', 'λόγος', true),
-    ('κύκλ', 'κυκλ', 'λόγος', true),
-    ('μῦθ', 'μυθ', 'λόγος', true),
-    ('νόμ', 'νομ', 'λόγος', true),
-    ('ποταμ', 'ποταμ', 'λόγος', true),
-    ('στόλ', 'στολ', 'λόγος', true),
-    ('τρόπ', 'τροπ', 'λόγος', true),
+    ('ἄνθρωπ', 'ἀνθρωπ', 'ἄνθρωπος', 2, false),
+--     ('ἔθν', 'ἐθν', 'ἔθνος', 3, false),          -- fairly similar but somewhat different
+    ('κῆπ', 'κηπ', 'κῆπος', 0, false),
+
+    ('κῠ́κλ', 'κυκλ', 'λόγος', 0, true),
+    ('κῠ́κλ', 'κυκλ', 'κῠ́κλᾰ', 0, true),               -- Special plural
+
+    ('μῦθ', 'μυθ', 'μῦθος', 0, false),
+    ('νόμ', 'νομ', 'λόγος', 0, true),
+    ('ποταμ', 'ποταμ', 'λόγος', 0, false),
+    ('στόλ', 'στολ', 'λόγος', 0, true),
+    ('τρόπ', 'τροπ', 'λόγος', 0, true),
 
     -- Nominative singular ending with ᾱ́
-    ('θε', 'θε', 'θεᾱ́', true),      -- Godess
+    ('θε', 'θε', 'θεᾱ́', 1, true),
 
     -- Nominative singular ending with ᾱ
-    ('θέ', 'θε', 'θεᾱ́', false),          -- View, sight
-    ('ἡμέρ', 'ἡμερ', 'θεᾱ́', false),        -- Day
+    ('θέ', 'θε', 'θεᾱ́', 1, false),
+    ('ἡμέρ', 'ἡμερ', 'θεᾱ́', 1, false),
 
     -- Nominative singular ending with ή
-    ('τῑμ', 'τιμ', 'τῑμή', true),        -- Honor, dignity, gift
-    ('μᾰ́χ', 'μαχ', 'τῑμή', false);
+    ('τῑμ', 'τιμ', 'τῑμή', 1, true),
+    ('μᾰ́χ', 'μαχ', 'τῑμή', 1, false);

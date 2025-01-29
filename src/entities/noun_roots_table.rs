@@ -12,6 +12,7 @@ pub struct Model {
     pub conjugation_group: String,
     pub root_without_accents: String,
     pub exact: bool,
+    pub gender: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

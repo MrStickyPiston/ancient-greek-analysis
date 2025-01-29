@@ -12,7 +12,6 @@ pub struct Model {
     pub suffix: String,
     pub morphological_amount: i32,
     pub morphological_case: i32,
-    pub morphological_gender: i32,
     pub prefix_without_accents: String,
     pub suffix_without_accents: String,
 }

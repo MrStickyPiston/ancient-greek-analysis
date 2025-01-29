@@ -11,5 +11,5 @@ pub(crate) fn without_accents<T: AsRef<str>>(input: T) -> String {
 #[test]
 fn test_without_accents() {
     // Filter out accents, but not spiriti or iota subscript
-    assert_eq!(without_accents("Ὁ τᾲ"), "Ὁ τᾳ");
+    assert_eq!(without_accents("Ὁ ἄνθρωπος ἀγαθός"), "Ὁ ἀνθρωπος ἀγαθος");
 }

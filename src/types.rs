@@ -1,4 +1,5 @@
 #[derive(Debug)]
+#[derive(Clone)]
 pub(crate) enum Amount {
     Singular,
     Dual,
@@ -8,6 +9,7 @@ pub(crate) enum Amount {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub(crate) enum Case {
     Nominative,
     Genitive,
@@ -19,6 +21,7 @@ pub(crate) enum Case {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub(crate) enum Gender {
     Masculine,
     Feminine,
@@ -33,9 +36,12 @@ pub(crate) struct NounMorphology {
     pub(crate) prefix: String,
     pub(crate) suffix: String,
     pub(crate) root: String,
+    
     pub(crate) amount: Amount,
     pub(crate) case: Case,
-    pub(crate) gender: Gender
+    pub(crate) gender: Gender,
+    
+    pub(crate) exact: bool,
 }
 
 pub(crate) fn amount_from_int(n: i32) -> Amount {

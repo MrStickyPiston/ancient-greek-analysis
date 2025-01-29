@@ -2,12 +2,13 @@ mod entities;
 mod types;
 mod nouns;
 mod utils;
+mod ui;
 
 use crate::nouns::get_morphology;
 use futures::executor::block_on;
 use sea_orm::*;
 use std::env::var;
-use crate::utils::without_accents;
+use crate::ui::terminal::render_noun_morphology;
 
 async fn run() -> Result<(), DbErr> {
     let db;
@@ -22,8 +23,8 @@ async fn run() -> Result<(), DbErr> {
         }
     };
 
-    let word = "μᾰ́χαις";
-    get_morphology(word, db).await?.iter().for_each(|m| println!("{:#?}", m));
+    let word = "κῠ́κλους";
+    get_morphology(word, db).await?.iter().for_each(|m| println!("{}\n", render_noun_morphology(m)));
     
     Ok(())
 }

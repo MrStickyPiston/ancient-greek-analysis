@@ -1,50 +1,68 @@
 use crate::entities::{prelude::*, *};
 use crate::types::{amount_from_int, case_from_int, gender_from_int, NounMorphology};
 use sea_orm::*;
-
+use crate::utils::without_accents;
 
 pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -> Result<Vec<NounMorphology>, DbErr> {
-    let unique_conjugations = NounConjugationTable::find()
+
+    let word_without_accents = without_accents(word);
+
+    let conjugations = NounConjugationTable::find()
         .all(&db).await?;
     
     let mut possible_morphology = vec![];
     
-    for conjugation in unique_conjugations {
+    for conjugation in conjugations {
         
-        let prefix = conjugation.prefix;
-        let suffix = conjugation.suffix;
-        
-        if !( word.starts_with(&prefix) && word.ends_with(&suffix) ) {
+        if !( word_without_accents.starts_with(&conjugation.prefix_without_accents) && word_without_accents.ends_with(&conjugation.suffix_without_accents) ) {
             // Word does not match the suffix/prefix
             continue;
         }
         
         let amount = amount_from_int(conjugation.morphological_amount);
         let case = case_from_int(conjugation.morphological_case);
-        let gender = gender_from_int(conjugation.morphological_gender);
         
-        let root = NounRootsTable::find()
+        let roots = NounRootsTable::find()
             .filter(
                 Condition::all()
                     .add( noun_roots_table::Column::ConjugationGroup.eq(conjugation.conjugation_group))
-                    .add( noun_roots_table::Column::Root.eq(word.trim_start_matches(&prefix).trim_end_matches(&suffix)) )
-            ).one(&db).await?;
-        
-        if root.is_none() {
-            // no matching roots found, applying the wrong conjugation group
-            continue;
-        }
-        
-        possible_morphology.push(
-            NounMorphology {
-                prefix: prefix.to_string(),
-                suffix: suffix.to_string(),
-                root: root.unwrap().root,
-                amount,
-                case,
-                gender,
+                    .add( noun_roots_table::Column::RootWithoutAccents.eq(word_without_accents.trim_start_matches(&conjugation.prefix_without_accents).trim_end_matches(&conjugation.suffix_without_accents)) )
+            ).all(&db).await?;
+
+        for root in roots {
+            
+            if root.exact {
+                possible_morphology.push(
+                    NounMorphology {
+                        prefix: conjugation.prefix.clone(),
+                        suffix: conjugation.suffix.clone(),
+                        root: root.root,
+
+                        amount: amount.clone(),
+                        case: case.clone(),
+                        gender: gender_from_int(root.gender),
+
+                        exact: true,
+                    }
+                );
+
+            } else {
+                possible_morphology.push(
+                    NounMorphology {
+                        prefix: conjugation.prefix_without_accents.clone(),
+                        suffix: conjugation.suffix_without_accents.clone(),
+                        root: root.root_without_accents,
+
+                        amount: amount.clone(),
+                        case: case.clone(),
+                        gender: gender_from_int(root.gender),
+
+                        exact: false,
+                    }
+                );
             }
-        );
+        }
+
     }
     
     Ok(possible_morphology)
