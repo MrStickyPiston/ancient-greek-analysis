@@ -836,6 +836,7 @@ version = "0.1.0"
 dependencies = [
  "futures",
  "sea-orm",
+ "serde_json",
  "unicode-normalization",
 ]
 

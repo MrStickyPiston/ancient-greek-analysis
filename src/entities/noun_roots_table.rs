@@ -13,6 +13,7 @@ pub struct Model {
     pub root_without_accents: String,
     pub exact: bool,
     pub gender: i32,
+    pub metadata: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

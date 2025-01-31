@@ -1,10 +1,11 @@
 import unicodedata
-from pprint import pprint
+import urllib.parse
 
 import requests
 from bs4 import BeautifulSoup
 
-import re
+from data.scraping.noun_metadata import get_metadata
+
 
 def int_from_amount(amount_str: str) -> int:
     amounts = {
@@ -77,11 +78,13 @@ def without_accents(s):
     return ''.join(c for c in unicodedata.normalize('NFD', s) if not unicodedata.combining(c) or c in ALLOWED_ACCENTS)
 
 
-html_source = open('table').read()
+url = input("Enter a wiktionary.org url: ")
+wiktionary_id = urllib.parse.urlparse(url).path.split("/")[-1]
 
-table = get_table(input("Enter a wiktionary.org url: "))
+table = get_table(url)
 nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
 root = input(f"Found a table with nominative singular {nominative_singular}. Enter the root: ")
+
 gender = input("Enter the gender: ")
 
 exact = 'true'
@@ -136,5 +139,5 @@ for c in range(len(conjugations)):
         print(";")
 
 print()
-print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, exact) VALUES")
-print(f"\t('{root}', '{without_accents(root)}', '{nominative_singular}', {int_from_gender(gender)}, {exact})", end=",")
+print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, exact, metadata) VALUES")
+print(f"\t('{root}', '{without_accents(root)}', '{nominative_singular}', {int_from_gender(gender)}, {exact}, '{get_metadata(wiktionary_id)}')", end=",")

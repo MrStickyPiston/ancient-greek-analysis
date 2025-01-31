@@ -42,6 +42,9 @@ pub(crate) struct NounMorphology {
     pub(crate) gender: Gender,
     
     pub(crate) exact: bool,
+    
+    pub(crate) definitions: Vec<String>,
+    pub(crate) wiktionary_id: String,
 }
 
 pub(crate) fn amount_from_int(n: i32) -> Amount {

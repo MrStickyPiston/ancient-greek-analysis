@@ -1,6 +1,8 @@
 use crate::entities::{prelude::*, *};
 use crate::types::{amount_from_int, case_from_int, gender_from_int, NounMorphology};
 use sea_orm::*;
+use serde_json::json;
+use serde_json::Value::{Null, String};
 use crate::utils::without_accents;
 
 pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -> Result<Vec<NounMorphology>, DbErr> {
@@ -30,8 +32,10 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
             ).all(&db).await?;
 
         for root in roots {
+
+            let metadata: serde_json::Value = serde_json::from_str(&root.metadata).unwrap_or(json!(Null));
             
-            if root.exact {
+            if root.exact && word.trim_start_matches(&conjugation.prefix).trim_end_matches(&conjugation.suffix) == root.root {
                 possible_morphology.push(
                     NounMorphology {
                         prefix: conjugation.prefix.clone(),
@@ -43,6 +47,9 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
                         gender: gender_from_int(root.gender),
 
                         exact: true,
+
+                        definitions: metadata["definitions"].as_array().unwrap_or(&Vec::new()).iter().map(|x| x.as_str().unwrap().to_string()).collect(),
+                        wiktionary_id: metadata["wiktionary_id"].as_str().unwrap_or("").to_string(),
                     }
                 );
 
@@ -58,6 +65,9 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
                         gender: gender_from_int(root.gender),
 
                         exact: false,
+
+                        definitions: metadata["definitions"].as_array().unwrap_or(&Vec::new()).iter().map(|x| x.as_str().unwrap().to_string()).collect(),
+                        wiktionary_id: metadata["wiktionary_id"].as_str().unwrap_or("").to_string(),
                     }
                 );
             }
