@@ -10,7 +10,6 @@ def get_definitions(wiktionary_id):
 
     for item in r.json()["other"]:
         if item["language"].lower() == "ancient greek":
-            print(item["definitions"])
 
             definitions = []
 
