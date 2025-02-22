@@ -1,5 +1,6 @@
 import unicodedata
 import urllib.parse
+from typing import Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -25,16 +26,16 @@ def int_from_case(case_str: str) -> int:
     }
     return cases.get(case_str, -1)
 
-def int_from_gender(gender_str: str) -> int:
+def int_from_gender(gender_str: Tuple[str]) -> int:
     genders = {
-        "Masculine": 0,
-        "Feminine": 1,
-        "MasculineOrFeminine": 2,
-        "Neuter": 3
+        ('m',): 0,
+        ('f',): 1,
+        ('m','f'): 2,
+        ('n',): 3
     }
     return genders.get(gender_str, -1)
 
-def get_table(url, dialect="Attic"):
+def get_table(html, dialect="Attic"):
     """
     Scrapes a table with class "NavFrame grc-decl" containing a div with class "NavHead"
     and a link with class "extiw" and text "Attic" from the specified URL.
@@ -49,8 +50,7 @@ def get_table(url, dialect="Attic"):
         The table element if found, otherwise None.
     """
 
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(html, 'html.parser')
 
     tables = soup.find_all('div', class_='NavFrame grc-decl')
     latest_table = None
@@ -65,6 +65,24 @@ def get_table(url, dialect="Attic"):
 
     return latest_table
 
+def get_gender(html):
+    gender_letters = []
+
+    soup = BeautifulSoup(html, 'html.parser')
+    gender_span = soup.find('span', class_='gender')
+    if gender_span:
+        gender_abbr = gender_span.find_all('abbr')
+        for abbr in gender_abbr:
+            gender_letters.append(abbr.text)
+
+    return tuple(gender_letters)
+
+def get_root(nominative_singular):
+    for ending in NOMINATIVE_SINGULAR_ENDINGS:
+        if without_accents(nominative_singular).endswith(ending):
+            return nominative_singular[:-len(ending)]
+
+
 ALLOWED_ACCENTS = [
     # Spiriti
     b'\xcc\x93'.decode(),
@@ -74,6 +92,12 @@ ALLOWED_ACCENTS = [
     b'\xcd\x85'.decode()
 ]
 
+# Order does matter
+NOMINATIVE_SINGULAR_ENDINGS = [
+    "ος",
+    "α"
+]
+
 def without_accents(s):
     return ''.join(c for c in unicodedata.normalize('NFD', s) if not unicodedata.combining(c) or c in ALLOWED_ACCENTS)
 
@@ -81,11 +105,13 @@ def without_accents(s):
 url = input("Enter a wiktionary.org url: ")
 wiktionary_id = urllib.parse.urlparse(url).path.split("/")[-1]
 
-table = get_table(url)
+html = requests.get(url).text
+table = get_table(html)
 nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
-root = input(f"Found a table with nominative singular {nominative_singular}. Enter the root: ")
 
-gender = input("Enter the gender: ")
+gender = get_gender(html)
+root = get_root(nominative_singular)
+print(f"Using gender: {",".join(gender)} and root: {root}")
 
 exact = 'true'
 
@@ -106,9 +132,11 @@ for row in table.find_all('tr'):
 
         for i in range(1,len(amount_col)):
             word = cols[i].find_all(class_='lang-grc')[-1].text
+            # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
 
             try:
                 prefix, suffix = word.split(root)
+                conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, true)")
             except ValueError:
 
                 try:
@@ -120,15 +148,13 @@ for row in table.find_all('tr'):
                     print(f"WARNING: root with different accent for conjugation '{word}'. Using prefix '{prefix}' and suffix '{suffix}', but a manual check is recommended.")
 
                     # different accents, not exact
-                    exact = 'false'
+                    conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, false)")
                 except ValueError:
-                    print(f"WARNING: non-default root for conjugation: {word}. Skipping conjugation.")
-                    continue
-
-            conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))})")
+                    print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
+                    exit(1)
 
 print("Run the following SQL code to add this to the database:\n")
-print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_without_accents, suffix_without_accents, morphological_amount, morphological_case) VALUES")
+print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_without_accents, suffix_without_accents, morphological_amount, morphological_case, exact) VALUES")
 for c in range(len(conjugations)):
     print("\t", end="")
     print(conjugations[c], end="")
@@ -139,5 +165,5 @@ for c in range(len(conjugations)):
         print(";")
 
 print()
-print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, exact, metadata) VALUES")
-print(f"\t('{root}', '{without_accents(root)}', '{nominative_singular}', {int_from_gender(gender)}, {exact}, '{get_metadata(wiktionary_id)}')", end=",")
+print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, metadata) VALUES")
+print(f"\t('{root}', '{without_accents(root)}', '{nominative_singular}', {int_from_gender(gender)}, '{get_metadata(wiktionary_id)}')", end=",")
