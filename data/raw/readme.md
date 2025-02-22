@@ -1,0 +1,1 @@
+Data obtained from running list_nouns.py sourced by subpages of https://en.wiktionary.org/wiki/Category:Ancient_Greek_nouns_by_inflection_type

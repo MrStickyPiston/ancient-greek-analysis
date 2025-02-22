@@ -122,3 +122,7 @@ INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_wi
                                                                                                                                                                      ('1m-l-ής', '', 'ᾰ́', '', 'α', 0, 4),
                                                                                                                                                                      ('1m-l-ής', '', 'ᾱ́', '', 'α', 1, 4),
                                                                                                                                                                      ('1m-l-ής', '', 'αί', '', 'αι', 2, 4);
+
+--- Second declension
+
+-- TODO: check https://en.wikipedia.org/wiki/Ancient_Greek_nouns#Second_declension root accent changes
