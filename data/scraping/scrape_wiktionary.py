@@ -1,5 +1,6 @@
 import unicodedata
 import urllib.parse
+from pprint import pprint
 from typing import Tuple
 
 import requests
@@ -94,7 +95,11 @@ ALLOWED_ACCENTS = [
 NOMINATIVE_SINGULAR_ENDINGS = [
     "ος",
     "α",
-    "η"
+    "η",
+    "ης",
+    "αι",
+    "ας",
+    "οι"
 ]
 
 def without_accents(s):
@@ -104,11 +109,20 @@ def get_conjugations(wiktionary_id):
     url = id_to_url(wiktionary_id)
     html = requests.get(url).text
     table = get_table(html)
+
+    if not table:
+        print(f"No conjugations found for {wiktionary_id}")
+        return []
+
     nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
 
     gender = get_gender(html)
     root = get_root(nominative_singular)
-    print(f"Using gender: {",".join(gender)} and root: {root}")
+    if root is None:
+        print(f"No root found for {wiktionary_id}")
+        return []
+
+    # print(f"Using gender: {",".join(gender)} and root: {root} for {wiktionary_id}")
 
     amount_col = []
     conjugations = []
@@ -131,7 +145,15 @@ def get_conjugations(wiktionary_id):
 
                 try:
                     prefix, suffix = word.split(root)
-                    conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, true)")
+                    conjugations.append((nominative_singular,
+                                         root, without_accents(root),
+                                         prefix, without_accents(prefix),
+                                         suffix, without_accents(suffix),
+                                         word, without_accents(word),
+                                         gender,
+                                         case.strip('\n'),
+                                         amount_col[i].strip('\n'),
+                                         True))
                 except ValueError:
 
                     try:
@@ -140,38 +162,47 @@ def get_conjugations(wiktionary_id):
                         prefix = word[:len(prefix)]
                         suffix = word[len(word) - len(suffix):]
 
-                        print(f"WARNING: root with different accent for conjugation '{word}'. Using prefix '{prefix}' and suffix '{suffix}', but a manual check is recommended.")
+                        # print(f"WARNING: root with different accent for conjugation '{word}'. Using prefix '{prefix}' and suffix '{suffix}', but a manual check is recommended.")
 
                         # different accents, not exact
-                        conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, false)")
+                        conjugations.append((nominative_singular,
+                                             root, without_accents(root),
+                                             prefix, without_accents(prefix),
+                                             suffix, without_accents(suffix),
+                                             word, without_accents(word),
+                                             gender,
+                                             case.strip('\n'),
+                                             amount_col[i].strip('\n'),
+                                             False))
                     except ValueError:
                         print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
                         exit(1)
     return conjugations
 
 def url_to_id(url):
+    # Returns id when an url is provided and else returns the input
     return urllib.parse.urlparse(url).path.split("/")[-1]
 
 def id_to_url(wiktionary_id):
     return "https://en.wiktionary.org/wiki/" + wiktionary_id
 
 def main():
-    conjugations = get_conjugations(url_to_id(input("Enter a wiktionary url: ")))
+    conjugations = get_conjugations(url_to_id(input("Enter a wiktionary url or id: ")))
 
-    print("Run the following SQL code to add this to the database:\n")
-    print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_without_accents, suffix_without_accents, morphological_amount, morphological_case, exact) VALUES")
-    for c in range(len(conjugations)):
-        print("\t", end="")
-        print(conjugations[c], end="")
-
-        if c < len(conjugations) - 1:
-            print(",")
-        else:
-            print(";")
+    pprint(conjugations, compact=True, width=120)
 
     # print()
     # print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, metadata) VALUES")
     # print(f"\t('{root}', '{without_accents(root)}', '{nominative_singular}', {int_from_gender(gender)}, '{get_metadata(wiktionary_id)}')", end=",")
 
+def from_file(file):
+    conjugations = []
+    with open(file, 'r', encoding='utf-8') as file:
+        for line in file:
+            word = line.strip()
+            conjugations += get_conjugations(word)
+
+    print(f"Found {len(conjugations)} conjugations")
+
 if __name__ == "__main__":
-    main()
+    from_file("data/raw/ancient_greek_first-declension_nouns.txt")
