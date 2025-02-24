@@ -5,8 +5,6 @@ from typing import Tuple
 import requests
 from bs4 import BeautifulSoup
 
-from data.scraping.noun_metadata import get_metadata
-
 
 def int_from_amount(amount_str: str) -> int:
     amounts = {
@@ -95,75 +93,85 @@ ALLOWED_ACCENTS = [
 # Order does matter
 NOMINATIVE_SINGULAR_ENDINGS = [
     "ος",
-    "α"
+    "α",
+    "η"
 ]
 
 def without_accents(s):
     return ''.join(c for c in unicodedata.normalize('NFD', s) if not unicodedata.combining(c) or c in ALLOWED_ACCENTS)
 
+def get_conjugations(wiktionary_id):
+    url = id_to_url(wiktionary_id)
+    html = requests.get(url).text
+    table = get_table(html)
+    nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
 
-url = input("Enter a wiktionary.org url: ")
-wiktionary_id = urllib.parse.urlparse(url).path.split("/")[-1]
+    gender = get_gender(html)
+    root = get_root(nominative_singular)
+    print(f"Using gender: {",".join(gender)} and root: {root}")
 
-html = requests.get(url).text
-table = get_table(html)
-nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
+    amount_col = []
+    conjugations = []
 
-gender = get_gender(html)
-root = get_root(nominative_singular)
-print(f"Using gender: {",".join(gender)} and root: {root}")
+    # Extract data from the table
+    for row in table.find_all('tr'):
+        cols = row.find_all(['th', 'td'])
 
-exact = 'true'
+        if cols[0].text == 'Case / #\n':
+            amount_col = [column.text for column in cols]
+        else:
+            case = cols[0].text
 
-amount_col = []
-conjugations = []
+            if case == "Notes:\n":
+                continue
 
-# Extract data from the table
-for row in table.find_all('tr'):
-    cols = row.find_all(['th', 'td'])
-
-    if cols[0].text == 'Case / #\n':
-        amount_col = [column.text for column in cols]
-    else:
-        case = cols[0].text
-
-        if case == "Notes:\n":
-            continue
-
-        for i in range(1,len(amount_col)):
-            word = cols[i].find_all(class_='lang-grc')[-1].text
-            # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
-
-            try:
-                prefix, suffix = word.split(root)
-                conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, true)")
-            except ValueError:
+            for i in range(1,len(amount_col)):
+                word = cols[i].find_all(class_='lang-grc')[-1].text
+                # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
 
                 try:
-                    prefix, suffix = without_accents(word).split(without_accents(root))
-
-                    prefix = word[:len(prefix)]
-                    suffix = word[len(word) - len(suffix):]
-
-                    print(f"WARNING: root with different accent for conjugation '{word}'. Using prefix '{prefix}' and suffix '{suffix}', but a manual check is recommended.")
-
-                    # different accents, not exact
-                    conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, false)")
+                    prefix, suffix = word.split(root)
+                    conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, true)")
                 except ValueError:
-                    print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
-                    exit(1)
 
-print("Run the following SQL code to add this to the database:\n")
-print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_without_accents, suffix_without_accents, morphological_amount, morphological_case, exact) VALUES")
-for c in range(len(conjugations)):
-    print("\t", end="")
-    print(conjugations[c], end="")
+                    try:
+                        prefix, suffix = without_accents(word).split(without_accents(root))
 
-    if c < len(conjugations) - 1:
-        print(",")
-    else:
-        print(";")
+                        prefix = word[:len(prefix)]
+                        suffix = word[len(word) - len(suffix):]
 
-print()
-print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, metadata) VALUES")
-print(f"\t('{root}', '{without_accents(root)}', '{nominative_singular}', {int_from_gender(gender)}, '{get_metadata(wiktionary_id)}')", end=",")
+                        print(f"WARNING: root with different accent for conjugation '{word}'. Using prefix '{prefix}' and suffix '{suffix}', but a manual check is recommended.")
+
+                        # different accents, not exact
+                        conjugations.append(f"('{nominative_singular}', '{prefix}', '{suffix}', '{without_accents(prefix)}', '{without_accents(suffix)}', {int_from_amount(amount_col[i].strip('\n'))}, {int_from_case(case.strip('\n'))}, false)")
+                    except ValueError:
+                        print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
+                        exit(1)
+    return conjugations
+
+def url_to_id(url):
+    return urllib.parse.urlparse(url).path.split("/")[-1]
+
+def id_to_url(wiktionary_id):
+    return "https://en.wiktionary.org/wiki/" + wiktionary_id
+
+def main():
+    conjugations = get_conjugations(url_to_id(input("Enter a wiktionary url: ")))
+
+    print("Run the following SQL code to add this to the database:\n")
+    print("INSERT INTO noun_conjugation_table (conjugation_group, prefix, suffix, prefix_without_accents, suffix_without_accents, morphological_amount, morphological_case, exact) VALUES")
+    for c in range(len(conjugations)):
+        print("\t", end="")
+        print(conjugations[c], end="")
+
+        if c < len(conjugations) - 1:
+            print(",")
+        else:
+            print(";")
+
+    # print()
+    # print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, metadata) VALUES")
+    # print(f"\t('{root}', '{without_accents(root)}', '{nominative_singular}', {int_from_gender(gender)}, '{get_metadata(wiktionary_id)}')", end=",")
+
+if __name__ == "__main__":
+    main()
