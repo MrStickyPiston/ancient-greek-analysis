@@ -54,6 +54,8 @@ def get_table(html, dialect="Attic"):
     tables = soup.find_all('div', class_='NavFrame grc-decl')
     latest_table = None
 
+    # TODO: fix not finding the table when multiple are the same like https://en.wiktionary.org/wiki/%CE%BA%CE%BF%CF%83%CE%BC%CE%BF%CF%80%CE%BF%CE%BB%CE%AF%CF%84%CE%B7%CF%82 (Koine, Attic)
+
     for table in reversed(tables):
         div = table.find('div', class_='NavHead')
         if div:
@@ -79,7 +81,17 @@ def get_gender(html):
 def get_root(nominative_singular):
     for ending in NOMINATIVE_SINGULAR_ENDINGS:
         if without_accents(nominative_singular).endswith(ending):
-            return nominative_singular[:-len(ending)]
+
+            # reverse for
+            n = 0
+            for i in range(len(nominative_singular)-1, -1, -1):
+                char = nominative_singular[i]
+
+                if not unicodedata.combining(char):
+                    n += 1
+                    if n == len(ending):
+                        return nominative_singular[:i]
+
 
 
 ALLOWED_ACCENTS = [
@@ -205,4 +217,5 @@ def from_file(file):
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
+    get_conjugations('αἱμᾰσῐᾱ́')
     from_file("data/raw/ancient_greek_first-declension_nouns.txt")
