@@ -54,15 +54,14 @@ def get_table(html, dialect="Attic"):
     tables = soup.find_all('div', class_='NavFrame grc-decl')
     latest_table = None
 
-    # TODO: fix not finding the table when multiple are the same like https://en.wiktionary.org/wiki/%CE%BA%CE%BF%CF%83%CE%BC%CE%BF%CF%80%CE%BF%CE%BB%CE%AF%CF%84%CE%B7%CF%82 (Koine, Attic)
-
     for table in reversed(tables):
         div = table.find('div', class_='NavHead')
         if div:
-            extiw = div.find('a', class_='extiw')
-            if extiw and extiw.text.strip() == dialect:
-                latest_table = table
-                break
+            dialects = div.find_all('a', class_='extiw')
+            for table_dialect in dialects:
+                if table_dialect.text.strip() == dialect:
+                    latest_table = table
+                    break
 
     return latest_table
 
@@ -217,5 +216,5 @@ def from_file(file):
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
-    get_conjugations('αἱμᾰσῐᾱ́')
+    main()
     from_file("data/raw/ancient_greek_first-declension_nouns.txt")
