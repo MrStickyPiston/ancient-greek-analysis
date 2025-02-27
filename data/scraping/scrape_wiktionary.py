@@ -113,7 +113,10 @@ NOMINATIVE_SINGULAR_ENDINGS = [
     "ας",
     "οι",
     "ον",
-    "ευς"
+    "ευς",
+    "ους",
+    "ες",
+    "ως"
 ]
 
 def without_accents(s):
@@ -160,7 +163,13 @@ def get_conjugations(wiktionary_id):
                 continue
 
             for i in range(1,len(amount_col)):
-                word = cols[i].find_all(class_='lang-grc')[-1].text
+                cell = cols[i].find_all(class_='lang-grc')
+
+                if not cell:
+                    continue
+
+                word = cell[-1].text
+
                 # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
 
                 try:
@@ -196,7 +205,7 @@ def get_conjugations(wiktionary_id):
                                              False))
                     except ValueError:
                         print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
-                        continue
+                        return []
     return conjugations
 
 def url_to_id(url):
