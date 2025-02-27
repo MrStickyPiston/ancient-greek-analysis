@@ -1,3 +1,4 @@
+import csv
 import unicodedata
 import urllib.parse
 from pprint import pprint
@@ -110,7 +111,9 @@ NOMINATIVE_SINGULAR_ENDINGS = [
     "ης",
     "αι",
     "ας",
-    "οι"
+    "οι",
+    "ον",
+    "ευς"
 ]
 
 def without_accents(s):
@@ -118,7 +121,13 @@ def without_accents(s):
 
 def get_conjugations(wiktionary_id):
     url = id_to_url(wiktionary_id)
-    html = requests.get(url).text
+
+    while True:
+        try:
+            html = requests.get(url).text
+            break
+        except Exception as e:
+            print(f"An error occured: {e}")
     table = get_table(html)
 
     if not table:
@@ -187,7 +196,7 @@ def get_conjugations(wiktionary_id):
                                              False))
                     except ValueError:
                         print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
-                        exit(1)
+                        continue
     return conjugations
 
 def url_to_id(url):
@@ -208,13 +217,16 @@ def main():
 
 def from_file(file):
     conjugations = []
-    with open(file, 'r', encoding='utf-8') as file:
-        for line in file:
+    with open(file, 'r', encoding='utf-8') as f:
+        for line in f:
             word = line.strip()
             conjugations += get_conjugations(word)
+
+    with open(file + '_parsed.csv', mode='w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(conjugations)
 
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
-    main()
-    from_file("data/raw/ancient_greek_first-declension_nouns.txt")
+    from_file("data/raw/ancient_greek_second-declension_nouns.txt")
