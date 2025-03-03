@@ -182,7 +182,8 @@ def get_conjugations(wiktionary_id):
                                          gender,
                                          case.strip('\n'),
                                          amount_col[i].strip('\n'),
-                                         True))
+                                         True,
+                                         wiktionary_id))
                 except ValueError:
 
                     try:
@@ -202,7 +203,8 @@ def get_conjugations(wiktionary_id):
                                              gender,
                                              case.strip('\n'),
                                              amount_col[i].strip('\n'),
-                                             False))
+                                             False,
+                                             wiktionary_id))
                     except ValueError:
                         print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
                         return []
@@ -231,7 +233,7 @@ def from_file(file):
             word = line.strip()
             conjugations += get_conjugations(word)
 
-    with open(file + '_parsed.csv', mode='w', newline='') as f:
+    with open(file.replace('.txt', '_parsed.csv'), mode='w', newline='') as f:
         writer = csv.writer(f)
         writer.writerows(conjugations)
 
