@@ -27,6 +27,11 @@ pub(crate) enum Gender {
     Feminine,
     MasculineOrFeminine,
     Neuter,
+
+    PluralMasculine,
+    PluralFeminine,
+    PluralMasculineOrFeminine,
+    PluralNeuter,
     
     Unknown
 }
@@ -73,6 +78,12 @@ pub(crate) fn gender_from_int(n: i32) -> Gender {
         1 => Gender::Feminine,
         2 => Gender::MasculineOrFeminine,
         3 => Gender::Neuter,
+
+        4 => Gender::PluralMasculine,
+        5 => Gender::PluralFeminine,
+        6 => Gender::PluralMasculineOrFeminine,
+        7 => Gender::PluralNeuter,
+
         _ => Gender::Unknown,
     }
 }

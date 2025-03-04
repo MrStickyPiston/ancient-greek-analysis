@@ -26,14 +26,18 @@ def int_from_case(case_str: str) -> int:
     }
     return cases.get(case_str, -1)
 
-def int_from_gender(gender_str: Tuple[str]) -> int:
+def int_from_gender(gender_str: Tuple[str] | str) -> int:
     genders = {
-        ('m',): 0,
-        ('f',): 1,
-        ('m','f'): 2,
-        ('n',): 3
+        "('m',)": 0,
+        "('f',)": 1,
+        "('m','f')": 2,
+        "('n',)": 3,
+        "('m', 'pl')": 4,
+        "('f', 'pl')": 5,
+        "('m', 'f', 'pl')": 6,
+        "('n', 'pl')": 7,
     }
-    return genders.get(gender_str, -1)
+    return genders.get(str(gender_str), -1)
 
 def get_table(html, dialect="Attic"):
     """

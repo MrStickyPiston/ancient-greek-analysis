@@ -3,5 +3,7 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/data/attic/noun/conjugations.sql" dialect="SQLite" />
     <file url="file://$PROJECT_DIR$/data/attic/noun/roots.sql" dialect="SQLite" />
+fin    <file url="file://$PROJECT_DIR$/data/clear.sql" dialect="SQLite" />
+    <file url="file://$PROJECT_DIR$/data/raw/ancient_greek_first-declension_nouns.sql" dialect="SQLite" />
   </component>
 </project>
