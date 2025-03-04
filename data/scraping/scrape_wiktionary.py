@@ -30,7 +30,8 @@ def int_from_gender(gender_str: Tuple[str] | str) -> int:
     genders = {
         "('m',)": 0,
         "('f',)": 1,
-        "('m','f')": 2,
+        "('m', 'f')": 2,
+        "('f', 'm')": 2,
         "('n',)": 3,
         "('m', 'pl')": 4,
         "('f', 'pl')": 5,
