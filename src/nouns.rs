@@ -34,7 +34,8 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
         for root in roots {
 
             let metadata: serde_json::Value = serde_json::from_str(&root.metadata).unwrap_or(json!(Null));
-            
+
+            // TODO: cleanup unused accent code ('exact')
             if root.exact && word.trim_start_matches(&conjugation.prefix).trim_end_matches(&conjugation.suffix) == root.root {
                 possible_morphology.push(
                     NounMorphology {
@@ -45,8 +46,6 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
                         amount: amount.clone(),
                         case: case.clone(),
                         gender: gender_from_int(root.gender),
-
-                        exact: true,
 
                         definitions: metadata["definitions"].as_array().unwrap_or(&Vec::new()).iter().map(|x| x.as_str().unwrap().to_string()).collect(),
                         wiktionary_id: metadata["wiktionary_id"].as_str().unwrap_or("").to_string(),
@@ -63,8 +62,6 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
                         amount: amount.clone(),
                         case: case.clone(),
                         gender: gender_from_int(root.gender),
-
-                        exact: false,
 
                         definitions: metadata["definitions"].as_array().unwrap_or(&Vec::new()).iter().map(|x| x.as_str().unwrap().to_string()).collect(),
                         wiktionary_id: metadata["wiktionary_id"].as_str().unwrap_or("").to_string(),

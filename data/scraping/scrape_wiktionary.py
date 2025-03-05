@@ -7,6 +7,8 @@ from typing import Tuple
 import requests
 from bs4 import BeautifulSoup
 
+from data.scraping.noun_metadata import get_definitions, get_metadata
+
 
 def int_from_amount(amount_str: str) -> int:
     amounts = {
@@ -122,6 +124,9 @@ NOMINATIVE_SINGULAR_ENDINGS = [
     "ους",
     "ες",
     "ως"
+    "αν",
+    "ουν",
+    "ως"
 ]
 
 def without_accents(s):
@@ -187,7 +192,7 @@ def get_conjugations(wiktionary_id):
                                          gender,
                                          case.strip('\n'),
                                          amount_col[i].strip('\n'),
-                                         True,
+                                         get_metadata(wiktionary_id),
                                          wiktionary_id))
                 except ValueError:
 
@@ -208,7 +213,7 @@ def get_conjugations(wiktionary_id):
                                              gender,
                                              case.strip('\n'),
                                              amount_col[i].strip('\n'),
-                                             False,
+                                             get_metadata(wiktionary_id),
                                              wiktionary_id))
                     except ValueError:
                         print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
@@ -245,4 +250,4 @@ def from_file(file):
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
-    from_file("data/raw/ancient_greek_second-declension_nouns.txt")
+    from_file("data/raw/ancient_greek_first-declension_nouns.txt")

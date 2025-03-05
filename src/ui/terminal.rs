@@ -2,8 +2,8 @@ use crate::types::NounMorphology;
 
 pub fn render_noun_morphology(m: &NounMorphology) -> String {
     let mut s = format!(
-        "Noun: {}{}{}\nExact: {}\nConjugation: {:?} {:?} {:?}",
-        m.prefix, m.root, m.suffix, m.exact, m.amount, m.case, m.gender
+        "Noun: {}{}{}\nConjugation: {:?} {:?} {:?}",
+        m.prefix, m.root, m.suffix, m.amount, m.case, m.gender
     );
     
     s.push_str("\nDefinitions: ");
