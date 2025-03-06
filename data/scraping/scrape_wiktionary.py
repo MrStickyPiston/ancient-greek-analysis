@@ -85,19 +85,54 @@ def get_gender(html):
 
     return tuple(gender_letters)
 
-def get_root(nominative_singular):
-    for ending in NOMINATIVE_SINGULAR_ENDINGS:
-        if without_accents(nominative_singular).endswith(ending):
+def get_root(table):
+    def longest_substr(data):
+        substr = ''
+        index = (0, 0)
 
-            # reverse for
-            n = 0
-            for i in range(len(nominative_singular)-1, -1, -1):
-                char = nominative_singular[i]
+        word = without_accents(data[0])
 
-                if not unicodedata.combining(char):
-                    n += 1
-                    if n == len(ending):
-                        return nominative_singular[:i]
+        if len(data) > 1 and len(word) > 0:
+            for i in range(len(word)):
+                for j in range(len(word) - i + 1):
+                    if j > len(substr) and all(word[i:i + j] in without_accents(x) for x in data):
+                        substr = word[i:i + j]
+                        index = (i, i + j)
+
+        after, before = 0, 0
+
+        for i, char in enumerate(data[0]):
+
+            if len(without_accents(data[0][:i])) == index[0]:
+                after = i
+
+            if len(without_accents(data[0][i:])) == len(word) - index[1]:
+                before = i
+
+        return data[0][after:before]
+
+    conjugations = []
+    for row in table.find_all('tr'):
+        cols = row.find_all(['th', 'td'])
+
+        if cols[0].text == 'Case / #\n':
+            amount_col = [column.text for column in cols]
+        else:
+            if cols[0].text == "Notes:\n":
+                continue
+
+            for i in range(1,len(amount_col)):
+                cell = cols[i].find_all(class_='lang-grc')
+
+                if not cell:
+                    continue
+
+                conjugations.append(cell[-1].text)
+
+    print(conjugations)
+    print(longest_substr(conjugations))
+
+    return longest_substr(conjugations)
 
 
 
@@ -108,25 +143,6 @@ ALLOWED_ACCENTS = [
 
     # Iota subscript
     b'\xcd\x85'.decode()
-]
-
-# Order does matter
-NOMINATIVE_SINGULAR_ENDINGS = [
-    "ος",
-    "α",
-    "η",
-    "ης",
-    "αι",
-    "ας",
-    "οι",
-    "ον",
-    "ευς",
-    "ους",
-    "ες",
-    "ως"
-    "αν",
-    "ουν",
-    "ως"
 ]
 
 def without_accents(s):
@@ -150,7 +166,7 @@ def get_conjugations(wiktionary_id):
     nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
 
     gender = get_gender(html)
-    root = get_root(nominative_singular)
+    root = get_root(table)
     if root is None:
         print(f"No root found for {wiktionary_id}")
         return []
@@ -183,7 +199,7 @@ def get_conjugations(wiktionary_id):
                 # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
 
                 try:
-                    prefix, suffix = word.split(root)
+                    prefix, suffix = word.split(root, 1)
                     conjugations.append((nominative_singular,
                                          root, without_accents(root),
                                          prefix, without_accents(prefix),
@@ -216,7 +232,7 @@ def get_conjugations(wiktionary_id):
                                              get_metadata(wiktionary_id),
                                              wiktionary_id))
                     except ValueError:
-                        print(f"WARNING: non-default root for conjugation: {word}. Exiting.")
+                        print(f"WARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
                         return []
     return conjugations
 
@@ -250,4 +266,4 @@ def from_file(file):
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
-    from_file("data/raw/ancient_greek_first-declension_nouns.txt")
+    from_file("data/raw/ancient_greek_third-declension_nouns.txt")
