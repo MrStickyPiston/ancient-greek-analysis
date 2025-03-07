@@ -29,6 +29,9 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
             .filter(
                 Condition::all()
                     .add( noun_roots_table::Column::ConjugationGroup.eq(conjugation.conjugation_group))
+
+                    // .nfc().collect::<String>() fixes no match being found due to unicode combining
+                    // This requires the data in the database to be NFC
                     .add( noun_roots_table::Column::Root.eq(word_without_accents.trim_start_matches(&conjugation.prefix).trim_end_matches(&conjugation.suffix).nfc().collect::<String>()) )
             ).all(&db).await?;
 

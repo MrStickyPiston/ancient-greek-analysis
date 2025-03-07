@@ -185,7 +185,13 @@ def get_conjugations(wiktionary_id):
                 # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
 
                 try:
-                    prefix, suffix = word.split(root, 1)
+                    prefix = ''
+
+                    if len(word.split(root, 1)) == 1:
+                        suffix = word
+                    else:
+                        prefix, suffix = word.split(root, 1)
+
                     conjugations.append((nominative_singular,
                                          root,
                                          prefix,
@@ -232,4 +238,4 @@ def from_file(file):
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
-    from_file("data/raw/ancient_greek_third-declension_nouns.txt")
+    from_file("data/raw/ancient_greek_second-declension_nouns.txt")

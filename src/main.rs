@@ -23,7 +23,7 @@ async fn run() -> Result<(), DbErr> {
         }
     };
 
-    let word = "παιδος";
+    let word = "ᾰ̓δελφῶν";
     get_morphology(word, db).await?.iter().for_each(|m| println!("{}\n", render_noun_morphology(m)));
     
     Ok(())

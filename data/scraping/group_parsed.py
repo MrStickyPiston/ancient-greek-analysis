@@ -1,6 +1,6 @@
 import pandas as pd
 
-file = 'data/raw/ancient_greek_third-declension_nouns_parsed.csv'
+file = 'data/raw/ancient_greek_second-declension_nouns_parsed.csv'
 
 df = pd.read_csv(file, header=None)
 grouped = df.groupby(0)

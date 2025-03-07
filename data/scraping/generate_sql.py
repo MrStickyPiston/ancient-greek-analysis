@@ -3,7 +3,7 @@ import pandas as pd
 from data.scraping.noun_metadata import get_metadata
 from data.scraping.scrape_wiktionary import int_from_amount, int_from_case, int_from_gender
 
-file = 'data/raw/ancient_greek_third-declension_nouns'
+file = 'data/raw/ancient_greek_second-declension_nouns'
 
 df = pd.read_csv(file + '_parsed.csv', header=None)
 
