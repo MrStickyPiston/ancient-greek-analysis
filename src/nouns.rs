@@ -1,9 +1,10 @@
 use crate::entities::{prelude::*, *};
 use crate::types::{amount_from_int, case_from_int, gender_from_int, NounMorphology};
+use crate::utils::without_accents;
 use sea_orm::*;
 use serde_json::json;
-use serde_json::Value::{Null, String};
-use crate::utils::without_accents;
+use serde_json::Value::Null;
+use unicode_normalization::UnicodeNormalization;
 
 pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -> Result<Vec<NounMorphology>, DbErr> {
 
@@ -16,7 +17,7 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
     
     for conjugation in conjugations {
         
-        if !( word_without_accents.starts_with(&conjugation.prefix_without_accents) && word_without_accents.ends_with(&conjugation.suffix_without_accents) ) {
+        if !( word_without_accents.starts_with(&conjugation.prefix) && word_without_accents.ends_with(&conjugation.suffix) ) {
             // Word does not match the suffix/prefix
             continue;
         }
@@ -28,16 +29,14 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
             .filter(
                 Condition::all()
                     .add( noun_roots_table::Column::ConjugationGroup.eq(conjugation.conjugation_group))
-                    .add( noun_roots_table::Column::RootWithoutAccents.eq(word_without_accents.trim_start_matches(&conjugation.prefix_without_accents).trim_end_matches(&conjugation.suffix_without_accents)) )
+                    .add( noun_roots_table::Column::Root.eq(word_without_accents.trim_start_matches(&conjugation.prefix).trim_end_matches(&conjugation.suffix).nfc().collect::<String>()) )
             ).all(&db).await?;
 
         for root in roots {
 
             let metadata: serde_json::Value = serde_json::from_str(&root.metadata).unwrap_or(json!(Null));
 
-            // TODO: cleanup unused accent code ('exact')
-            if root.exact && word.trim_start_matches(&conjugation.prefix).trim_end_matches(&conjugation.suffix) == root.root {
-                possible_morphology.push(
+            possible_morphology.push(
                     NounMorphology {
                         prefix: conjugation.prefix.clone(),
                         suffix: conjugation.suffix.clone(),
@@ -50,27 +49,10 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
                         definitions: metadata["definitions"].as_array().unwrap_or(&Vec::new()).iter().map(|x| x.as_str().unwrap().to_string()).collect(),
                         wiktionary_id: metadata["wiktionary_id"].as_str().unwrap_or("").to_string(),
                     }
-                );
-
-            } else {
-                possible_morphology.push(
-                    NounMorphology {
-                        prefix: conjugation.prefix_without_accents.clone(),
-                        suffix: conjugation.suffix_without_accents.clone(),
-                        root: root.root_without_accents,
-
-                        amount: amount.clone(),
-                        case: case.clone(),
-                        gender: gender_from_int(root.gender),
-
-                        definitions: metadata["definitions"].as_array().unwrap_or(&Vec::new()).iter().map(|x| x.as_str().unwrap().to_string()).collect(),
-                        wiktionary_id: metadata["wiktionary_id"].as_str().unwrap_or("").to_string(),
-                    }
-                );
-            }
+            );
         }
 
     }
-    
+
     Ok(possible_morphology)
 }
