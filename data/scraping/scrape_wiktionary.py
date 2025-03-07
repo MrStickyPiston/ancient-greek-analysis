@@ -88,28 +88,16 @@ def get_gender(html):
 def get_root(table):
     def longest_substr(data):
         substr = ''
-        index = (0, 0)
 
-        word = without_accents(data[0])
+        word = data[0]
 
         if len(data) > 1 and len(word) > 0:
             for i in range(len(word)):
                 for j in range(len(word) - i + 1):
-                    if j > len(substr) and all(word[i:i + j] in without_accents(x) for x in data):
+                    if j > len(substr) and all(word[i:i + j] in x for x in data):
                         substr = word[i:i + j]
-                        index = (i, i + j)
 
-        after, before = 0, 0
-
-        for i, char in enumerate(data[0]):
-
-            if len(without_accents(data[0][:i])) == index[0]:
-                after = i
-
-            if len(without_accents(data[0][i:])) == len(word) - index[1]:
-                before = i
-
-        return data[0][after:before]
+        return substr
 
     conjugations = []
     for row in table.find_all('tr'):
@@ -127,10 +115,7 @@ def get_root(table):
                 if not cell:
                     continue
 
-                conjugations.append(cell[-1].text)
-
-    print(conjugations)
-    print(longest_substr(conjugations))
+                conjugations.append(without_accents(cell[-1].text))
 
     return longest_substr(conjugations)
 
@@ -146,7 +131,10 @@ ALLOWED_ACCENTS = [
 ]
 
 def without_accents(s):
-    return ''.join(c for c in unicodedata.normalize('NFD', s) if not unicodedata.combining(c) or c in ALLOWED_ACCENTS)
+    return unicodedata.normalize(
+        'NFC',
+        ''.join(c for c in unicodedata.normalize('NFD', s) if not unicodedata.combining(c) or c in ALLOWED_ACCENTS)
+    )
 
 def get_conjugations(wiktionary_id):
     url = id_to_url(wiktionary_id)
@@ -171,8 +159,6 @@ def get_conjugations(wiktionary_id):
         print(f"No root found for {wiktionary_id}")
         return []
 
-    # print(f"Using gender: {",".join(gender)} and root: {root} for {wiktionary_id}")
-
     amount_col = []
     conjugations = []
 
@@ -194,46 +180,26 @@ def get_conjugations(wiktionary_id):
                 if not cell:
                     continue
 
-                word = cell[-1].text
+                word = without_accents(cell[-1].text)
 
                 # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
 
                 try:
                     prefix, suffix = word.split(root, 1)
                     conjugations.append((nominative_singular,
-                                         root, without_accents(root),
-                                         prefix, without_accents(prefix),
-                                         suffix, without_accents(suffix),
-                                         word, without_accents(word),
+                                         root,
+                                         prefix,
+                                         suffix,
+                                         word,
                                          gender,
                                          case.strip('\n'),
                                          amount_col[i].strip('\n'),
                                          get_metadata(wiktionary_id),
                                          wiktionary_id))
                 except ValueError:
+                    print(f"WARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
+                    return []
 
-                    try:
-                        prefix, suffix = without_accents(word).split(without_accents(root))
-
-                        prefix = word[:len(prefix)]
-                        suffix = word[len(word) - len(suffix):]
-
-                        # print(f"WARNING: root with different accent for conjugation '{word}'. Using prefix '{prefix}' and suffix '{suffix}', but a manual check is recommended.")
-
-                        # different accents, not exact
-                        conjugations.append((nominative_singular,
-                                             root, without_accents(root),
-                                             prefix, without_accents(prefix),
-                                             suffix, without_accents(suffix),
-                                             word, without_accents(word),
-                                             gender,
-                                             case.strip('\n'),
-                                             amount_col[i].strip('\n'),
-                                             get_metadata(wiktionary_id),
-                                             wiktionary_id))
-                    except ValueError:
-                        print(f"WARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
-                        return []
     return conjugations
 
 def url_to_id(url):
