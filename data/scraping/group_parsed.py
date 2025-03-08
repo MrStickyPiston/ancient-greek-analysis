@@ -1,6 +1,6 @@
 import pandas as pd
 
-file = 'data/raw/ancient_greek_second-declension_nouns_parsed.csv'
+file = 'data/raw/nouns/all_parsed.csv'
 
 df = pd.read_csv(file, header=None)
 grouped = df.groupby(0)
@@ -17,7 +17,7 @@ for name, group in grouped:
 
     unique_groups[key].append(group.values.tolist())
 
-result = [groups for groups in unique_groups.values() if len(groups) > 1]
+result = [groups for groups in unique_groups.values()]
 
 with open(file.replace('parsed.csv', 'grouped.txt'), mode='w', newline='') as f:
     for idx, group in enumerate(result):

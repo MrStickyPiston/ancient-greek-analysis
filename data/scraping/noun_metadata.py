@@ -15,10 +15,7 @@ def get_definitions(wiktionary_id):
 
             for i in item["definitions"]:
                 definition = i['definition']
-
                 soup = BeautifulSoup(definition, 'html.parser')
-                for span in soup.find_all('span'):
-                    span.decompose()
 
                 text = soup.get_text()
 

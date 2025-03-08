@@ -30,15 +30,10 @@ def int_from_case(case_str: str) -> int:
 
 def int_from_gender(gender_str: Tuple[str] | str) -> int:
     genders = {
-        "('m',)": 0,
-        "('f',)": 1,
-        "('m', 'f')": 2,
-        "('f', 'm')": 2,
-        "('n',)": 3,
-        "('m', 'pl')": 4,
-        "('f', 'pl')": 5,
-        "('m', 'f', 'pl')": 6,
-        "('n', 'pl')": 7,
+        "Masculine": 0,
+        "Feminine": 1,
+        "MasculineOrFeminine": 2,
+        "Neuter": 3
     }
     return genders.get(str(gender_str), -1)
 
@@ -72,18 +67,37 @@ def get_tables(html, dialect="Attic"):
 
     return dialect_tables
 
-def get_gender(table):
-    table_articles = [without_accents(a['title']) for a in table.find(class_='NavHead').find_all('a', title=True)]
+
+def backup_get_gender(html):
+    # Slightly less accurate gender for when no article is present
+    gender_letters = []
+
+    soup = BeautifulSoup(html, 'html.parser')
+    gender_span = soup.find('span', class_='gender')
+    if gender_span:
+        gender_abbr = gender_span.find_all('abbr')
+        for abbr in gender_abbr:
+            gender_letters.append(abbr.text)
+
+    return set(gender_letters)
+
+
+def get_gender(html, table):
+    # Detects gender based on article used in the table header. When no article is present the backup function backup_get_gender is used instead.
+    table_articles = [a['title'] for a in table.find(class_='NavHead').find_all('a', title=True)]
 
     gender = set()
 
     for article in table_articles:
         if article in MASCULINE_ARTICLES:
             gender.add('m')
-        if article in FEMININE_ARTICLES:
+        elif article in FEMININE_ARTICLES:
             gender.add('f')
-        if article in NEUTER_ARTICLES:
+        elif article in NEUTER_ARTICLES:
             gender.add('n')
+
+    if gender == set():
+        gender = backup_get_gender(html)
 
     if gender == {'m'}:
         return "Masculine"
@@ -94,8 +108,8 @@ def get_gender(table):
     elif gender == {'n'}:
         return "Neuter"
     else:
-        print(f"Unknown gender: {gender}")
-        return "Unknown"
+        print(f"Unknown gender: {gender} ({table.find(class_='NavHead').text.strip()})")
+        return f"Unknown"
 
 
 def get_root(table):
@@ -144,9 +158,9 @@ ALLOWED_ACCENTS = [
 ]
 
 # Nominative articles
-MASCULINE_ARTICLES = ['ὁ', 'τω', 'ὁι']
-FEMININE_ARTICLES = ['ἡ', 'τα', 'ἁι']
-NEUTER_ARTICLES = ['το', 'τω', 'τα']
+MASCULINE_ARTICLES = ['ὁ', 'οἱ']
+FEMININE_ARTICLES = ['ἡ', 'αἱ']
+NEUTER_ARTICLES = ['τὸ', 'τὼ', 'τὰ']
 ARTICLES = MASCULINE_ARTICLES + FEMININE_ARTICLES + NEUTER_ARTICLES
 
 def without_accents(s):
@@ -156,11 +170,10 @@ def without_accents(s):
     )
 
 def get_conjugations(wiktionary_id):
-    url = id_to_url(wiktionary_id)
 
     while True:
         try:
-            html = requests.get(url).text
+            html = requests.get(f'https://en.wiktionary.org/w/api.php?action=parse&page={wiktionary_id}&format=json').json()['parse']['text']['*']
             break
         except Exception as e:
             print(f"An error occured: {e}")
@@ -175,7 +188,7 @@ def get_conjugations(wiktionary_id):
     for table in tables:
         nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
 
-        gender = get_gender(table)
+        gender = get_gender(html, table)
         root = get_root(table)
         if root is None:
             print(f"No root found for {wiktionary_id}")
@@ -233,9 +246,6 @@ def url_to_id(url):
     # Returns id when an url is provided and else returns the input
     return urllib.parse.urlparse(url).path.split("/")[-1]
 
-def id_to_url(wiktionary_id):
-    return "https://en.wiktionary.org/wiki/" + wiktionary_id
-
 def main():
     conjugations = get_conjugations(url_to_id(input("Enter a wiktionary url or id: ")))
 
@@ -247,10 +257,14 @@ def main():
 
 def from_file(file):
     conjugations = []
-    with open(file, 'r', encoding='utf-8') as f:
-        for line in f:
-            word = line.strip()
-            conjugations += get_conjugations(word)
+
+    try:
+        with open(file, 'r', encoding='utf-8') as f:
+            for line in f:
+                word = line.strip()
+                conjugations += get_conjugations(word)
+    except KeyboardInterrupt:
+        pass
 
     with open(file.replace('.txt', '_parsed.csv'), mode='w', newline='') as f:
         writer = csv.writer(f)
@@ -259,4 +273,4 @@ def from_file(file):
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
-    from_file("data/raw/nouns/list.txt")
+    from_file("data/raw/nouns/all.txt")
