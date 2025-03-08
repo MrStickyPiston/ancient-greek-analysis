@@ -42,7 +42,7 @@ def int_from_gender(gender_str: Tuple[str] | str) -> int:
     }
     return genders.get(str(gender_str), -1)
 
-def get_table(html, dialect="Attic"):
+def get_tables(html, dialect="Attic"):
     """
     Scrapes a table with class "NavFrame grc-decl" containing a div with class "NavHead"
     and a link with class "extiw" and text "Attic" from the specified URL.
@@ -60,7 +60,7 @@ def get_table(html, dialect="Attic"):
     soup = BeautifulSoup(html, 'html.parser')
 
     tables = soup.find_all('div', class_='NavFrame grc-decl')
-    latest_table = None
+    dialect_tables = []
 
     for table in reversed(tables):
         div = table.find('div', class_='NavHead')
@@ -68,22 +68,35 @@ def get_table(html, dialect="Attic"):
             dialects = div.find_all('a', class_='extiw')
             for table_dialect in dialects:
                 if table_dialect.text.strip() == dialect:
-                    latest_table = table
-                    break
+                    dialect_tables.append(table)
 
-    return latest_table
+    return dialect_tables
 
-def get_gender(html):
-    gender_letters = []
+def get_gender(table):
+    table_articles = [without_accents(a['title']) for a in table.find(class_='NavHead').find_all('a', title=True)]
 
-    soup = BeautifulSoup(html, 'html.parser')
-    gender_span = soup.find('span', class_='gender')
-    if gender_span:
-        gender_abbr = gender_span.find_all('abbr')
-        for abbr in gender_abbr:
-            gender_letters.append(abbr.text)
+    gender = set()
 
-    return tuple(gender_letters)
+    for article in table_articles:
+        if article in MASCULINE_ARTICLES:
+            gender.add('m')
+        if article in FEMININE_ARTICLES:
+            gender.add('f')
+        if article in NEUTER_ARTICLES:
+            gender.add('n')
+
+    if gender == {'m'}:
+        return "Masculine"
+    elif gender == {'f'}:
+        return "Feminine"
+    elif gender == {'m', 'f'}:
+        return "MasculineOrFeminine"
+    elif gender == {'n'}:
+        return "Neuter"
+    else:
+        print(f"Unknown gender: {gender}")
+        return "Unknown"
+
 
 def get_root(table):
     def longest_substr(data):
@@ -130,6 +143,12 @@ ALLOWED_ACCENTS = [
     b'\xcd\x85'.decode()
 ]
 
+# Nominative articles
+MASCULINE_ARTICLES = ['ὁ', 'τω', 'ὁι']
+FEMININE_ARTICLES = ['ἡ', 'τα', 'ἁι']
+NEUTER_ARTICLES = ['το', 'τω', 'τα']
+ARTICLES = MASCULINE_ARTICLES + FEMININE_ARTICLES + NEUTER_ARTICLES
+
 def without_accents(s):
     return unicodedata.normalize(
         'NFC',
@@ -145,66 +164,68 @@ def get_conjugations(wiktionary_id):
             break
         except Exception as e:
             print(f"An error occured: {e}")
-    table = get_table(html)
+    tables = get_tables(html)
 
-    if not table:
+    if not tables:
         print(f"No conjugations found for {wiktionary_id}")
         return []
 
-    nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
-
-    gender = get_gender(html)
-    root = get_root(table)
-    if root is None:
-        print(f"No root found for {wiktionary_id}")
-        return []
-
-    amount_col = []
     conjugations = []
 
-    # Extract data from the table
-    for row in table.find_all('tr'):
-        cols = row.find_all(['th', 'td'])
+    for table in tables:
+        nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
 
-        if cols[0].text == 'Case / #\n':
-            amount_col = [column.text for column in cols]
-        else:
-            case = cols[0].text
+        gender = get_gender(table)
+        root = get_root(table)
+        if root is None:
+            print(f"No root found for {wiktionary_id}")
+            return []
 
-            if case == "Notes:\n":
-                continue
+        amount_col = []
 
-            for i in range(1,len(amount_col)):
-                cell = cols[i].find_all(class_='lang-grc')
+        # Extract data from the table
+        for row in table.find_all('tr'):
+            cols = row.find_all(['th', 'td'])
 
-                if not cell:
+            if cols[0].text == 'Case / #\n':
+                amount_col = [column.text for column in cols]
+            else:
+                case = cols[0].text
+
+                if case == "Notes:\n":
                     continue
 
-                word = without_accents(cell[-1].text)
+                for i in range(1,len(amount_col)):
+                    cell = cols[i].find_all(class_='lang-grc')
 
-                # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
+                    if not cell:
+                        continue
 
-                try:
-                    prefix = ''
+                    word = without_accents(cell[-1].text)
 
-                    if len(word.split(root, 1)) == 1:
-                        suffix = word
-                    else:
-                        prefix, suffix = word.split(root, 1)
+                    # TODO: make this work with mutliple conjugations like vocative singular of https://en.wiktionary.org/wiki/%E1%BC%80%CE%B4%CE%B5%CE%BB%CF%86%CF%8C%CF%82#Ancient_Greek
 
-                    conjugations.append((nominative_singular,
-                                         root,
-                                         prefix,
-                                         suffix,
-                                         word,
-                                         gender,
-                                         case.strip('\n'),
-                                         amount_col[i].strip('\n'),
-                                         get_metadata(wiktionary_id),
-                                         wiktionary_id))
-                except ValueError:
-                    print(f"WARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
-                    return []
+                    try:
+                        prefix = ''
+
+                        if len(word.split(root, 1)) == 1:
+                            suffix = word
+                        else:
+                            prefix, suffix = word.split(root, 1)
+
+                        conjugations.append((nominative_singular,
+                                             root,
+                                             prefix,
+                                             suffix,
+                                             word,
+                                             gender,
+                                             case.strip('\n'),
+                                             amount_col[i].strip('\n'),
+                                             get_metadata(wiktionary_id),
+                                             wiktionary_id))
+                    except ValueError:
+                        print(f"WARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
+                        continue
 
     return conjugations
 
@@ -238,4 +259,4 @@ def from_file(file):
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
-    from_file("data/raw/ancient_greek_second-declension_nouns.txt")
+    from_file("data/raw/nouns/list.txt")
