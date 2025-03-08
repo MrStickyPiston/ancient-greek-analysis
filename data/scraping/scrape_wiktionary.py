@@ -3,6 +3,7 @@ import unicodedata
 import urllib.parse
 from pprint import pprint
 from typing import Tuple
+import sys
 
 import requests
 from bs4 import BeautifulSoup
@@ -221,7 +222,7 @@ def get_conjugations(wiktionary_id):
                     try:
                         prefix = ''
 
-                        if len(word.split(root, 1)) == 1:
+                        if root == '' or len(word.split(root, 1)) == 1:
                             suffix = word
                         else:
                             prefix, suffix = word.split(root, 1)
@@ -249,7 +250,7 @@ def url_to_id(url):
 def main():
     conjugations = get_conjugations(url_to_id(input("Enter a wiktionary url or id: ")))
 
-    pprint(conjugations, compact=True, width=120)
+    csv.writer(sys.stdout).writerows(conjugations)
 
     # print()
     # print("INSERT INTO noun_roots_table (root, root_without_accents, conjugation_group, gender, metadata) VALUES")
@@ -273,4 +274,5 @@ def from_file(file):
     print(f"Found {len(conjugations)} conjugations")
 
 if __name__ == "__main__":
+    main()
     from_file("data/raw/nouns/all.txt")
