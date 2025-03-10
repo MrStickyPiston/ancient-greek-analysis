@@ -1,3 +1,5 @@
+import sys
+
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -23,7 +25,7 @@ def get_definitions(wiktionary_id):
 
             return definitions
 
-    print("WARNING: no ancient greek definition found")
+    print("\nWARNING: no ancient greek definition found")
 
     return []
 
@@ -33,16 +35,18 @@ def get_metadata(wiktionary_id):
         'definitions': get_definitions(wiktionary_id)
     }).replace("'", '"')
 
+def main(folder):
+    with open(folder + 'index.txt') as f:
+        pages = f.read().splitlines()
+        print(f"Parsing {len(pages)} pages")
 
-with open('/home/sticky/coding/ancient-greek-analysis/data/scripts/data/nouns/proper/index.txt') as f:
-    pages = f.read().splitlines()
-    print(f"Parsing {len(pages)} pages")
+        results = {}
+        for page in pages:
+            results[page] = get_metadata(page)
+            print(f"\rProgress: {len(results)}/{len(pages)}", end="")
 
-    results = {}
-    for page in pages:
-        results[page] = get_metadata(page)
-        print(f"\rProgress: {len(results)}/{len(pages)}", end="")
+        with open(folder + 'definitions.json', 'w') as f:
+            json.dump(results, f)
 
-    with open('/home/sticky/coding/ancient-greek-analysis/data/scripts/data/nouns/proper/definitions.json', 'w') as f:
-        json.dump(results, f)
-
+if __name__ == "__main__":
+    main(sys.argv[1])

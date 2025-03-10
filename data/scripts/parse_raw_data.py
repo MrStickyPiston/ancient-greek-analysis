@@ -85,7 +85,7 @@ def get_gender(html, table):
     elif gender == {'n'}:
         return "Neuter"
     else:
-        print(f"Unknown gender: {gender} ({table.find(class_='NavHead').text.strip()})")
+        print(f"\nUnknown gender: {gender} ({table.find(class_='NavHead').text.strip()})")
         return f"Unknown"
 
 
@@ -123,29 +123,22 @@ def get_root(table):
 
     return longest_substr(conjugations)
 
-def get_conjugations(wiktionary_id, definitions):
+def get_conjugations(wiktionary_id, definitions, folder):
 
-    while True:
-        try:
-            html = requests.get(f'https://en.wiktionary.org/w/api.php?action=parse&page={wiktionary_id}&format=json').json()['parse']['text']['*']
-            break
-        except Exception as e:
-            print(f"An error occured: {e}")
+    html = open(folder + wiktionary_id + ".html", 'r').read()
     tables = get_tables(html)
 
     if not tables:
-        print(f"No conjugations found for {wiktionary_id}")
+        print(f"\nNo conjugations found for {wiktionary_id}")
         return []
 
     conjugations = []
 
     for table in tables:
-        nominative_singular = table.select_one('.NavContent .inflection-table-grc tbody tr:nth-child(2) td').find_all(class_='lang-grc')[-1].text
-
         gender = get_gender(html, table)
         root = get_root(table)
         if root is None:
-            print(f"No root found for {wiktionary_id}")
+            print(f"\nNo root found for {wiktionary_id}")
             return []
 
         amount_col = []
@@ -180,7 +173,7 @@ def get_conjugations(wiktionary_id, definitions):
                         else:
                             prefix, suffix = word.split(root, 1)
 
-                        conjugations.append((nominative_singular,
+                        conjugations.append((wiktionary_id,
                                              root,
                                              prefix,
                                              suffix,
@@ -188,10 +181,10 @@ def get_conjugations(wiktionary_id, definitions):
                                              gender,
                                              case.strip('\n'),
                                              amount_col[i].strip('\n'),
-                                             definitions.get(wiktionary_id),
-                                             wiktionary_id))
+                                             definitions.get(wiktionary_id)
+                                             ))
                     except ValueError:
-                        print(f"WARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
+                        print(f"\nWARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
                         continue
 
     return conjugations
@@ -210,11 +203,14 @@ def main(folder):
 
     with ThreadPoolExecutor(max_workers=None) as executor:
         for page in pages:
-            processes.append(executor.submit(get_conjugations, page, definitions))
+            processes.append(executor.submit(get_conjugations, page, definitions, folder))
+
+        i = 0
 
         for result in as_completed(processes):
+            i += 1
+            print(f"\rProgress: {i}/{len(pages)}", end="")
             conjugations += result.result()
-            print(len(conjugations))
 
     with open(folder + "parsed.csv", mode='w', newline='') as f:
         writer = csv.writer(f)
