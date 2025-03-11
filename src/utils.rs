@@ -5,7 +5,7 @@ const ALLOWED_ACCENTS: [char; 3] = ['̓', '̔', 'ͅ'];
 pub(crate) fn without_accents<T: AsRef<str>>(input: T) -> String {
     input.as_ref().nfd()
         .filter(|c| !is_combining_mark(*c) || ALLOWED_ACCENTS.contains(c))
-        .collect()
+        .nfc().collect::<String>()
 }
 
 #[test]

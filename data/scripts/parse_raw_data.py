@@ -129,7 +129,7 @@ def get_conjugations(wiktionary_id, definitions, folder):
     tables = get_tables(html)
 
     if not tables:
-        print(f"\nNo conjugations found for {wiktionary_id}")
+        print(f"No conjugations found for {wiktionary_id}")
         return []
 
     conjugations = []
@@ -138,7 +138,7 @@ def get_conjugations(wiktionary_id, definitions, folder):
         gender = get_gender(html, table)
         root = get_root(table)
         if root is None:
-            print(f"\nNo root found for {wiktionary_id}")
+            print(f"No root found for {wiktionary_id}")
             return []
 
         amount_col = []
@@ -184,7 +184,7 @@ def get_conjugations(wiktionary_id, definitions, folder):
                                              definitions.get(wiktionary_id)
                                              ))
                     except ValueError:
-                        print(f"\nWARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
+                        print(f"WARNING: non-default root for conjugation: {word}. (wiktionary: {wiktionary_id}, root: {root})")
                         continue
 
     return conjugations
@@ -211,6 +211,8 @@ def main(folder):
             i += 1
             print(f"\rProgress: {i}/{len(pages)}", end="")
             conjugations += result.result()
+
+    conjugations.sort(key=lambda x: x[0])
 
     with open(folder + "parsed.csv", mode='w', newline='') as f:
         writer = csv.writer(f)

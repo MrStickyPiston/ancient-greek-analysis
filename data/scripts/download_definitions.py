@@ -36,13 +36,20 @@ def get_metadata(wiktionary_id):
     }).replace("'", '"')
 
 def main(folder):
+    with open(folder + 'definitions.json', 'r') as f:
+        old = json.load(f)
+
     with open(folder + 'index.txt') as f:
         pages = f.read().splitlines()
-        print(f"Parsing {len(pages)} pages")
+        print(f"Downloading {len(pages)} definitions")
 
         results = {}
         for page in pages:
-            results[page] = get_metadata(page)
+
+            if old.get(page):
+                results[page] = old.get(page)
+            else:
+                results[page] = get_metadata(page)
             print(f"\rProgress: {len(results)}/{len(pages)}", end="")
 
         with open(folder + 'definitions.json', 'w') as f:

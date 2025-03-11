@@ -60,7 +60,7 @@ def main(category, folder):
     s = requests.Session()
 
     for i, page in enumerate(pages):
-        print(f"\rProgress for {category}: {i+1}/{len(pages)}", end="")
+        print(f"\rProgress downloading {category}: {i+1}/{len(pages)}", end="")
 
         if os.path.exists(f"{folder}{page}.html") and os.path.getsize(f"{folder}{page}.html") > 0:
             continue
