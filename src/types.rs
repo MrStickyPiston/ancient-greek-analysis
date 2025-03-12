@@ -1,3 +1,5 @@
+use sea_orm::FromQueryResult;
+
 #[derive(Debug)]
 #[derive(Clone)]
 pub(crate) enum Amount {
@@ -84,4 +86,11 @@ pub(crate) fn gender_from_int(n: i32) -> Gender {
 
         _ => Gender::Unknown,
     }
+}
+
+#[derive(Debug, FromQueryResult, PartialEq)]
+pub(crate) struct ConjugationLite {
+    // Only contains prefix and suffix to alloy finding distinct prefixes and suffixes
+    pub(crate) prefix: String,
+    pub(crate) suffix: String
 }
