@@ -19,7 +19,6 @@ def get_tables(html, dialect="Attic"):
     In other words, finds the conjugation table from a wiktionary.org page
 
     Args:
-        url (str): The URL to scrape.
         dialect (str): the dialect to choose
 
     Returns:
@@ -134,7 +133,7 @@ def get_conjugations(wiktionary_id, definitions, folder):
 
     conjugations = []
 
-    for table in tables:
+    for index, table in enumerate(tables):
         gender = get_gender(html, table)
         root = get_root(table)
         if root is None:
@@ -173,7 +172,7 @@ def get_conjugations(wiktionary_id, definitions, folder):
                         else:
                             prefix, suffix = word.split(root, 1)
 
-                        conjugations.append((wiktionary_id,
+                        conjugations.append((f"{wiktionary_id}{index}",
                                              root,
                                              prefix,
                                              suffix,
