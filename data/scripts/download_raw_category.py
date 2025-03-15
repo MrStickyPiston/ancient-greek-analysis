@@ -1,6 +1,7 @@
 import requests
 import sys
 import os
+import shutil
 
 
 HEADERS = {
@@ -33,7 +34,9 @@ def list_pages(category):
 
         # Save each pageid as a string
         for member in category_members:
-            if member["title"].startswith("Unsupported titles"):
+
+            # Ignore
+            if "/" in member["title"]:
                 continue
             pages.append(member["title"].replace(" ", "_"))
 

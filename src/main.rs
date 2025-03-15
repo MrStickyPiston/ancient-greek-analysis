@@ -12,7 +12,8 @@ use crate::ui::terminal::render_noun_morphology;
 
 async fn run() -> Result<(), DbErr> {
     let db;
-    
+
+    // Connect to the database from the environment variable DATABASE_URL
     match var("DATABASE_URL") {
         Ok(url) => {
             db = Database::connect(&url).await?;
@@ -23,7 +24,9 @@ async fn run() -> Result<(), DbErr> {
         }
     };
 
-    let word = "ᾰ̓νδροῖν";
+    // TODO: provide a real input method
+    // Currently this is used for testing purposes so no new word has to be entered over and over again
+    let word = "ᾰ̓́νδρᾰς";
     get_morphology(word, db).await?.iter().for_each(|m| println!("{}\n", render_noun_morphology(m)));
     
     Ok(())

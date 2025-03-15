@@ -3,27 +3,36 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 import json
+import os
 
 def get_definitions(wiktionary_id):
     r = requests.get(f"https://en.wiktionary.org/api/rest_v1/page/definition/{wiktionary_id}")
+
+    if r.status_code == 404:
+        print(f"\nDefinition not found for {wiktionary_id}")
+        return []
     r.raise_for_status()
 
-    for item in r.json()["other"]:
-        if item["language"].lower() == "ancient greek":
+    try:
+        for item in r.json()["other"]:
+            if item["language"].lower() == "ancient greek":
 
-            definitions = []
+                definitions = []
 
-            for i in item["definitions"]:
-                definition = i['definition']
-                soup = BeautifulSoup(definition, 'html.parser')
+                for i in item["definitions"]:
+                    definition = i['definition']
+                    soup = BeautifulSoup(definition, 'html.parser')
 
-                text = soup.get_text()
+                    text = soup.get_text()
 
-                for d in text.split("\n"):
-                    if d.strip() != "":
-                        definitions.append(d.strip())
+                    for d in text.split("\n"):
+                        if d.strip() != "":
+                            definitions.append(d.strip())
 
-            return definitions
+                return definitions
+    except KeyError:
+        print(f"\nAncient Greek definition not found for {wiktionary_id}")
+        return []
 
     print("\nWARNING: no ancient greek definition found")
 
@@ -36,24 +45,32 @@ def get_metadata(wiktionary_id):
     }).replace("'", '"')
 
 def main(folder):
-    with open(folder + 'definitions.json', 'r') as f:
-        old = json.load(f)
+    old = {}
+
+    if os.path.exists(folder + 'definitions.json'):
+        with open(folder + 'definitions.json', 'r') as f:
+            old = json.load(f)
 
     with open(folder + 'index.txt') as f:
         pages = f.read().splitlines()
         print(f"Downloading {len(pages)} definitions")
 
-        results = {}
-        for page in pages:
+        new = {}
+        try:
+            for page in pages:
 
-            if old.get(page):
-                results[page] = old.get(page)
-            else:
-                results[page] = get_metadata(page)
-            print(f"\rProgress: {len(results)}/{len(pages)}", end="")
+                if not old.get(page):
+                    new[page] = get_metadata(page)
 
-        with open(folder + 'definitions.json', 'w') as f:
-            json.dump(results, f)
+                print(f"\rProgress: {len(new) + len(old)}/{len(pages)}", end="")
+        except BaseException as e:
+            print(f"An error occured:")
+            print(e)
+
+    with open(folder + 'definitions.json', 'w') as f:
+        results = old.copy()
+        results.update(new)
+        json.dump(results, f)
 
 if __name__ == "__main__":
     main(sys.argv[1])

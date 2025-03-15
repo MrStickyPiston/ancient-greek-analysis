@@ -10,6 +10,7 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
 
     let word_without_accents = without_accents(word);
 
+    // Query all unique conjugation endings
     let conjugations: Vec<ConjugationLite> = NounConjugationTable::find()
         .select_only()
         .columns([noun_conjugation_table::Column::Prefix, noun_conjugation_table::Column::Suffix])
@@ -18,7 +19,8 @@ pub(crate) async fn get_morphology(word: &'static str, db: DatabaseConnection) -
         .all(&db).await?;
 
     let mut possible_morphology = vec![];
-    
+
+    // Loop through all unique conjugation endings, note that this is not
     for conjugation in conjugations {
 
         let prefix = conjugation.prefix;
