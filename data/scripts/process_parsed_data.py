@@ -25,28 +25,29 @@ def get_grouped(df):
 
 def int_from_amount(amount_str: str) -> int:
     amounts = {
-        "Singular": 0,
-        "Dual": 1,
-        "Plural": 2
+        "singular": 0,
+        "dual": 1,
+        "plural": 2
     }
     return amounts.get(amount_str)
 
 def int_from_case(case_str: str) -> int:
     cases = {
-        "Nominative": 0,
-        "Genitive": 1,
-        "Dative": 2,
-        "Accusative": 3,
-        "Vocative": 4
+        "nominative": 0,
+        "genitive": 1,
+        "dative": 2,
+        "accusative": 3,
+        "vocative": 4
     }
     return cases.get(case_str)
 
 def int_from_gender(gender_str: Tuple[str] | str) -> int:
     genders = {
-        "Masculine": 0,
-        "Feminine": 1,
-        "MasculineOrFeminine": 2,
-        "Neuter": 3
+        "masculine": 0,
+        "feminine": 1,
+        "masculine/feminine": 2,
+        "neuter": 3,
+        "masculine/neuter": 4
     }
     return genders.get(str(gender_str))
 
@@ -120,4 +121,4 @@ def main(folder):
                 f.write(root[1] + ',\n')
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    main('data/')
